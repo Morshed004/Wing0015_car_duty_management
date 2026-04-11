@@ -1,23 +1,93 @@
+"use client";
 import React from "react";
-import { 
-  Bus, 
-  Car, 
-  LayoutDashboard, 
-  PieChart, 
-  TrendingUp, 
-  Map, 
-  MapPin, 
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import {
+  Bus,
+  Car,
+  LayoutDashboard,
+  PieChart,
+  TrendingUp,
+  Map,
+  MapPin,
   Building2,
   Copy,
   ChevronRight,
-  Globe
+  Globe,
+  LoaderCircle
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
+  const entries = useQuery(api.entries.get);
+
+  if (entries === undefined) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+        <LoaderCircle className="animate-spin text-emerald-500" size={40} />
+        <p className="text-slate-500 font-bold animate-pulse tracking-wide">Loading dashboard insights...</p>
+      </div>
+    );
+  }
+
+  const totalFleet = entries.length;
+  const busCount = entries.filter((e) => e.vehicle_type === 'Bus').length;
+  const microbusCount = entries.filter((e) => e.vehicle_type === 'Microbus').length;
+  const busProgress = totalFleet > 0 ? Math.round((busCount / totalFleet) * 100) : 0;
+  const microProgress = totalFleet > 0 ? Math.round((microbusCount / totalFleet) * 100) : 0;
+
+  const toBanglaDigit = (num: number | string) => num.toString().replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[d as any]);
+
+  const getAll = (key: 'division' | 'district' | 'thana') => {
+    const counts = entries.reduce((acc: Record<string, number>, e) => {
+      if (!e[key]) return acc;
+      acc[e[key]] = (acc[e[key]] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  };
+
+  const allDivisions = getAll('division');
+  const allDistricts = getAll('district');
+  const allThanas = getAll('thana');
+
+  const handleCopy = () => {
+
+    let report = `📊 গাড়ীর সারাংশ রিপোর্ট\n\n`;
+    report += `মোট গাড়ী: ${toBanglaDigit(totalFleet)}\n`;
+    report += `বাস: ${toBanglaDigit(busCount)}\n`;
+    report += `মাইক্রোবাস: ${toBanglaDigit(microbusCount)}\n\n`;
+
+    report += `📍 বিভাগ অনুযায়ী:\n`;
+    allDivisions.length > 0 
+      ? allDivisions.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`)
+      : report += `- তথ্য নেই\n`;
+    
+    report += `\n📍 জেলা অনুযায়ী:\n`;
+    allDistricts.length > 0 
+      ? allDistricts.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`)
+      : report += `- তথ্য নেই\n`;
+
+    report += `\n📍 থানা অনুযায়ী:\n`;
+    allThanas.length > 0 
+      ? allThanas.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`)
+      : report += `- তথ্য নেই\n`;
+
+    navigator.clipboard.writeText(report).then(() => {
+      toast.success("কপি সম্পন্ন", {
+        description: "রিপোর্টটি সফলভাবে কপি করা হয়েছে।"
+      });
+    }).catch(() => {
+      toast.error("কপি ব্যর্থ", {
+        description: "রিপোর্টটি কপি করতে সমস্যা হয়েছে।"
+      });
+    });
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 pt-10 antialiased font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* 1. HEADER SECTION */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
@@ -29,8 +99,8 @@ export default function DashboardPage() {
             </div>
             <p className="text-slate-500 font-medium">Real-time vehicle distribution and fleet insights</p>
           </div>
-          
-          <button className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95">
+
+          <button onClick={handleCopy} className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all active:scale-95">
             <Copy size={18} />
             Copy Summary Report
           </button>
@@ -38,9 +108,9 @@ export default function DashboardPage() {
 
         {/* 2. SUMMARY METRIC CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="Total Fleet" value="1,248" icon={<Car />} trend="System active" color="slate" />
-          <StatCard title="Buses" value="842" icon={<Bus />} progress={65} color="emerald" />
-          <StatCard title="Microbuses" value="406" icon={<Car className="rotate-12" />} progress={35} color="teal" />
+          <StatCard title="Total Fleet" value={totalFleet.toLocaleString()} icon={<Car />} trend="System active" color="slate" />
+          <StatCard title="Buses" value={busCount.toLocaleString()} icon={<Bus />} progress={busProgress} color="emerald" />
+          <StatCard title="Microbuses" value={microbusCount.toLocaleString()} icon={<Car className="rotate-12" />} progress={microProgress} color="teal" />
         </div>
 
         {/* 3. GEOGRAPHIC DISTRIBUTION (Division, Zila, Thana) */}
@@ -59,10 +129,10 @@ export default function DashboardPage() {
                 <Map size={18} />
                 <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">By Division</h3>
               </div>
-              <div className="space-y-2">
-                <GeoItem label="Dhaka" count={512} color="emerald" />
-                <GeoItem label="Chittagong" count={324} color="emerald" />
-                <GeoItem label="Sylhet" count={128} color="emerald" />
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {allDivisions.length > 0 ? allDivisions.map(([label, count]) => (
+                  <GeoItem key={label as string} label={label as string} count={count as number} color="emerald" />
+                )) : <div className="text-slate-400 text-sm">No data available</div>}
               </div>
             </div>
 
@@ -72,10 +142,10 @@ export default function DashboardPage() {
                 <MapPin size={18} />
                 <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">By District (Zila)</h3>
               </div>
-              <div className="space-y-2">
-                <GeoItem label="Gazipur" count={142} color="teal" />
-                <GeoItem label="Narayanganj" count={98} color="teal" />
-                <GeoItem label="Cumilla" count={76} color="teal" />
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {allDistricts.length > 0 ? allDistricts.map(([label, count]) => (
+                  <GeoItem key={label as string} label={label as string} count={count as number} color="teal" />
+                )) : <div className="text-slate-400 text-sm">No data available</div>}
               </div>
             </div>
 
@@ -85,10 +155,10 @@ export default function DashboardPage() {
                 <Building2 size={18} />
                 <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">By Thana</h3>
               </div>
-              <div className="space-y-2">
-                <GeoItem label="Savar" count={64} color="slate" />
-                <GeoItem label="Tongi" count={42} color="slate" />
-                <GeoItem label="Gulshan" count={38} color="slate" />
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {allThanas.length > 0 ? allThanas.map(([label, count]) => (
+                  <GeoItem key={label as string} label={label as string} count={count as number} color="slate" />
+                )) : <div className="text-slate-400 text-sm">No data available</div>}
               </div>
             </div>
           </div>
@@ -103,21 +173,21 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-slate-800">Vehicle Breakdown</h2>
             </div>
             <div className="space-y-4">
-              <BreakdownItem label="Bus" count="842" percentage={65} icon={<Bus />} color="emerald" />
-              <BreakdownItem label="Microbus" count="406" percentage={35} icon={<Car />} color="teal" />
+              <BreakdownItem label="Bus" count={busCount.toLocaleString()} percentage={busProgress} icon={<Bus />} color="emerald" />
+              <BreakdownItem label="Microbus" count={microbusCount.toLocaleString()} percentage={microProgress} icon={<Car />} color="teal" />
             </div>
           </div>
 
           {/* Graphical Visualization Placeholder */}
           <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white flex flex-col justify-center items-center relative overflow-hidden">
             <div className="relative z-10 text-center">
-               <div className="w-44 h-44 rounded-full border-12 border-emerald-500/20 flex items-center justify-center">
-                  <div className="text-center">
-                    <span className="block text-5xl font-black leading-none">1.2k</span>
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-400 opacity-80 mt-2">Total Units</span>
-                  </div>
-               </div>
-               <p className="mt-6 text-slate-400 text-sm font-medium">Fleet status: Optimal</p>
+              <div className="w-44 h-44 rounded-full border-12 border-emerald-500/20 flex items-center justify-center">
+                <div className="text-center">
+                  <span className="block text-5xl font-black leading-none">{totalFleet > 999 ? (totalFleet / 1000).toFixed(1) + 'k' : totalFleet}</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-400 opacity-80 mt-2">Total Units</span>
+                </div>
+              </div>
+              <p className="mt-6 text-slate-400 text-sm font-medium">Fleet status: Optimal</p>
             </div>
             {/* Ambient Background Glows */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-[100px] opacity-20"></div>
@@ -145,11 +215,11 @@ const StatCard = ({ title, value, icon, progress, trend, color }: any) => (
     {progress ? (
       <div className="mt-6">
         <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase mb-2">
-            <span>Ratio</span>
-            <span>{progress}%</span>
+          <span>Ratio</span>
+          <span>{progress}%</span>
         </div>
         <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full ${color === 'emerald' ? 'bg-emerald-500' : 'bg-teal-500'}`} style={{ width: `${progress}%` }}></div>
+          <div className={`h-full rounded-full ${color === 'emerald' ? 'bg-emerald-500' : 'bg-teal-500'}`} style={{ width: `${progress}%` }}></div>
         </div>
       </div>
     ) : (

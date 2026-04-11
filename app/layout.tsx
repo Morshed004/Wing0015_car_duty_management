@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 import Navbar from "@/components/navbar";
+import { Toaster } from "sonner";
+import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <Navbar />
         <main className="grow pt-20">
           <ConvexClientProvider>{children}</ConvexClientProvider>
+          <Toaster richColors position="top-right" />
         </main>
       </body>
     </html>

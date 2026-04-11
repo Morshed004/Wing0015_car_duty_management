@@ -1,92 +1,129 @@
 "use client";
 import React, { useState } from "react";
-import { 
-  LayoutDashboard, 
-  Car, 
-  Trash2, 
-  Search, 
-  Download, 
-  Filter, 
-  User, 
-  Phone, 
-  MapPin, 
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import {
+  LayoutDashboard,
+  Car,
+  Trash2,
+  Search,
+  Download,
+  Filter,
+  User,
+  Phone,
+  MapPin,
   ChevronDown,
   Eye,
   EyeOff,
-  Map
+  Map,
+  LoaderCircle,
+  FileX
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function EntriesPageUI() {
-  const [showForm, setShowForm] = useState(true);
+  const showForm = useQuery(api.form_status.get) ?? true;
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Mock data for UI representation
-  const mockEntries = [
-    { id: 1, type: "Bus", number: "Dhaka-Metro-Ga-1234", name: "Rahim Ahmed", mobile: "01711000000", dMobile: "01811000000", div: "ঢাকা", dist: "গাজীপুর", thana: "সাভার" },
-    { id: 2, type: "Microbus", number: "Chatto-Metro-Ka-5678", name: "Karim Uddin", mobile: "01911000000", dMobile: "01511000000", div: "চট্টগ্রাম", dist: "ফেনী", thana: "সদর" },
-  ];
+  // Fetch real data
+  const entries = useQuery(api.entries.get);
+  const isLoading = entries === undefined;
+  const displayEntries = entries || [];
+
+  const exportToCSV = () => {
+    if (!displayEntries || displayEntries.length === 0) {
+      toast.error("No data to export", { description: "There are no entries currently available to download." });
+      return;
+    }
+
+    const headers = [
+      "Vehicle Type", 
+      "Vehicle Number", 
+      "Representative Name", 
+      "Representative Mobile", 
+      "Driver Mobile", 
+      "Division", 
+      "District", 
+      "Thana",
+      "Creation Time"
+    ];
+
+    const rows = displayEntries.map((entry: any) => [
+      entry.vehicle_type || "",
+      entry.vehicle_number || "",
+      entry.representative_name || "",
+      entry.representative_mobile || "",
+      entry.driver_mobile || "",
+      entry.division || "",
+      entry.district || "",
+      entry.thana || "",
+      entry._creationTime ? new Date(entry._creationTime).toLocaleString() : ""
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" }); // BOM for Bangla support
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "wing0015-car-entry-report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success("Export Successful", { description: "wing0015-car-entry-report.csv downloaded." });
+  };
+
+  const uniqueDivisions = Array.from(new Set(displayEntries.map((e: any) => e.division).filter(Boolean))).sort() as string[];
+  const uniqueDistricts = Array.from(new Set(displayEntries.map((e: any) => e.district).filter(Boolean))).sort() as string[];
+  const uniqueThanas = Array.from(new Set(displayEntries.map((e: any) => e.thana).filter(Boolean))).sort() as string[];
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans antialiased text-slate-900">
       <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* HEADER & FORM TOGGLE */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-6 bg-white rounded-4xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="font-black text-2xl text-slate-800 tracking-tight">Entry Management</h1>
-              <p className="text-sm text-slate-400 font-medium">Manage and monitor vehicle registrations</p>
-            </div>
-          </div>
-          
-          <button 
-            onClick={() => setShowForm(!showForm)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-sm ${
-              showForm 
-              ? "bg-slate-900 text-white hover:bg-slate-800" 
-              : "bg-emerald-500 text-white hover:bg-emerald-600"
-            }`}
-          >
-            {showForm ? <EyeOff size={18} /> : <Eye size={18} />}
-            {showForm ? "Hide Public Form" : "Show Public Form"}
-          </button>
-        </div>
+
 
         {/* SEARCH & FILTERS SECTION */}
         <div className="bg-white rounded-4xl p-6 shadow-sm border border-slate-100 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="lg:col-span-3 relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-              <input 
-                type="text" 
-                placeholder="Search by vehicle number, name, or phone..." 
+              <input
+                type="text"
+                placeholder="Search by vehicle number, name, or phone..."
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-emerald-500/5 outline-none font-medium transition-all"
               />
             </div>
             <div className="flex gap-2">
-                <button className="grow flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-4 rounded-2xl font-bold text-sm hover:bg-emerald-100 transition-all">
-                    <Download size={18} /> 
-                    Export
-                </button>
-                <button 
-                    onClick={() => setShowMobileFilters(!showMobileFilters)}
-                    className="lg:hidden p-4 bg-slate-100 text-slate-600 rounded-2xl"
-                >
-                    <Filter size={20} />
-                </button>
+              <button 
+                onClick={exportToCSV}
+                className="grow flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-4 rounded-2xl font-bold text-sm hover:bg-emerald-100 transition-all"
+              >
+                <Download size={18} />
+                Export
+              </button>
+              <button
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="lg:hidden p-4 bg-slate-100 text-slate-600 rounded-2xl"
+              >
+                <Filter size={20} />
+              </button>
             </div>
           </div>
 
           {/* GEOGRAPHIC FILTERS (Desktop Always Visible, Mobile Collapsable) */}
           <div className={`${showMobileFilters ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row items-center gap-4 pt-4 border-t border-slate-50`}>
             <div className="flex items-center gap-2 text-slate-400 mr-2">
-                <Map size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Filters:</span>
+              <Map size={16} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Filters:</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                <GeoSelect label="Division" options={["Dhaka", "Chattogram", "Sylhet"]} />
-                <GeoSelect label="District (Zila)" options={["Gazipur", "Feni", "Cumilla"]} />
-                <GeoSelect label="Thana" options={["Savar", "Sadar", "Gulshan"]} />
+              <GeoSelect label="Division" options={uniqueDivisions} />
+              <GeoSelect label="District (Zila)" options={uniqueDistricts} />
+              <GeoSelect label="Thana" options={uniqueThanas} />
             </div>
           </div>
         </div>
@@ -99,72 +136,99 @@ export default function EntriesPageUI() {
                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle</th>
                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Representative</th>
                 <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Location Details</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {mockEntries.map((entry) => (
-                <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-100 rounded-lg text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
-                        <Car size={18} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{entry.number}</span>
-                        <span className="text-xs text-slate-400 font-medium">{entry.type}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-700">{entry.name}</span>
-                      <span className="text-xs text-emerald-600 font-bold">{entry.mobile}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-sm text-slate-500 font-medium">
-                    <div className="flex items-center gap-1 text-slate-600">
-                      <MapPin size={14} className="text-emerald-500" />
-                      {entry.div} • {entry.dist} • {entry.thana}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <button className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90">
-                      <Trash2 size={18} />
-                    </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                    <LoaderCircle className="animate-spin mx-auto mb-2 text-emerald-500" size={28} />
+                    <p className="font-medium text-sm">Loading vehicle entries...</p>
                   </td>
                 </tr>
-              ))}
+              ) : displayEntries.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400 shadow-inner">
+                        <FileX size={32} />
+                      </div>
+                      <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight">No Entries Found</h3>
+                      <p className="text-slate-500 text-sm font-medium">There are no vehicle registrations recorded yet.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                displayEntries.map((entry) => (
+                  <tr key={entry._id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-slate-100 rounded-lg text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                          <Car size={18} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800">{entry.vehicle_number}</span>
+                          <span className="text-xs text-slate-400 font-medium">{entry.vehicle_type}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700">{entry.representative_name}</span>
+                        <span className="text-xs text-emerald-600 font-bold">{entry.representative_mobile}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-sm text-slate-500 font-medium">
+                      <div className="flex items-center gap-1 text-slate-600">
+                        <MapPin size={14} className="text-emerald-500" />
+                        {entry.division} • {entry.district} • {entry.thana}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         {/* CARDS (MOBILE) */}
         <div className="md:hidden space-y-4">
-          {mockEntries.map((entry) => (
-            <div key={entry.id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                    <Car size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-slate-800">{entry.number}</h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{entry.type}</p>
+          {isLoading ? (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 text-center">
+              <LoaderCircle className="animate-spin mx-auto mb-2 text-emerald-500" size={28} />
+              <p className="font-medium text-sm text-slate-400">Loading entries...</p>
+            </div>
+          ) : displayEntries.length === 0 ? (
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 shadow-inner">
+                <FileX size={32} />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight">No Entries Found</h3>
+              <p className="text-slate-500 text-sm font-medium">There are no vehicle registrations recorded yet.</p>
+            </div>
+          ) : (
+            displayEntries.map((entry) => (
+              <div key={entry._id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                      <Car size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-800">{entry.vehicle_number}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{entry.vehicle_type}</p>
+                    </div>
                   </div>
                 </div>
-                <button className="p-3 bg-red-50 text-red-500 rounded-2xl active:bg-red-500 active:text-white transition-all">
-                  <Trash2 size={20} />
-                </button>
-              </div>
 
-              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl">
-                <MobileInfo icon={<User size={14}/>} label="Rep" value={entry.name} />
-                <MobileInfo icon={<Phone size={14}/>} label="Phone" value={entry.mobile} />
-                <MobileInfo icon={<MapPin size={14}/>} label="Loc" value={`${entry.dist}, ${entry.thana}`} />
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl">
+                  <MobileInfo icon={<User size={14} />} label="Rep" value={entry.representative_name} />
+                  <MobileInfo icon={<Phone size={14} />} label="Phone" value={entry.representative_mobile} />
+                  <MobileInfo icon={<MapPin size={14} />} label="Loc" value={`${entry.district}, ${entry.thana}`} />
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
