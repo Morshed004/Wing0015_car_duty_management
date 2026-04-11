@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@convex-dev/better-auth": "^0.11.4",
+    "@tanstack/react-form": "^1.29.0",
+    "@tanstack/zod-form-adapter": "^0.42.1",
     "better-auth": "1.5.3",
     "convex": "^1.35.1",
+    "lucide-react": "^1.8.0",
     "next": "16.2.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

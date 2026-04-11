@@ -1,7 +1,10 @@
-import Image from "next/image";
+import VehicleEntryForm from "@/components/entry-form";
+import Navbar from "@/components/navbar";
 
 export default function Home() {
   return (
-    <div>Home page</div>
+    <>
+      <VehicleEntryForm />
+    </>
   );
 }
