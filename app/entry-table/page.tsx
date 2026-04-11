@@ -1,20 +1,24 @@
 "use client";
-import {
-    Car,
-    Download,
-    Eye,
-    EyeOff,
-    LayoutDashboard,
-    MapPin,
-    Phone,
-    Search,
-    Trash2,
-    User
+import React, { useState } from "react";
+import { 
+  LayoutDashboard, 
+  Car, 
+  Trash2, 
+  Search, 
+  Download, 
+  Filter, 
+  User, 
+  Phone, 
+  MapPin, 
+  ChevronDown,
+  Eye,
+  EyeOff,
+  Map
 } from "lucide-react";
-import { useState } from "react";
 
 export default function EntriesPageUI() {
   const [showForm, setShowForm] = useState(true);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Mock data for UI representation
   const mockEntries = [
@@ -29,9 +33,6 @@ export default function EntriesPageUI() {
         {/* HEADER & FORM TOGGLE */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-6 bg-white rounded-4xl shadow-sm border border-slate-100">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-               <LayoutDashboard size={24} />
-            </div>
             <div>
               <h1 className="font-black text-2xl text-slate-800 tracking-tight">Entry Management</h1>
               <p className="text-sm text-slate-400 font-medium">Manage and monitor vehicle registrations</p>
@@ -52,19 +53,42 @@ export default function EntriesPageUI() {
         </div>
 
         {/* SEARCH & FILTERS SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="lg:col-span-3 relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search by vehicle number, name, or phone..." 
-              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/5 focus:border-emerald-500/20 outline-none font-medium transition-all shadow-sm"
-            />
+        <div className="bg-white rounded-4xl p-6 shadow-sm border border-slate-100 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="lg:col-span-3 relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" size={20} />
+              <input 
+                type="text" 
+                placeholder="Search by vehicle number, name, or phone..." 
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-emerald-500/5 outline-none font-medium transition-all"
+              />
+            </div>
+            <div className="flex gap-2">
+                <button className="grow flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-4 rounded-2xl font-bold text-sm hover:bg-emerald-100 transition-all">
+                    <Download size={18} /> 
+                    Export
+                </button>
+                <button 
+                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                    className="lg:hidden p-4 bg-slate-100 text-slate-600 rounded-2xl"
+                >
+                    <Filter size={20} />
+                </button>
+            </div>
           </div>
-          <button className="flex items-center justify-center gap-2 bg-white border border-slate-100 text-slate-700 px-6 py-4 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm">
-            <Download size={18} className="text-emerald-600" /> 
-            Download CSV
-          </button>
+
+          {/* GEOGRAPHIC FILTERS (Desktop Always Visible, Mobile Collapsable) */}
+          <div className={`${showMobileFilters ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row items-center gap-4 pt-4 border-t border-slate-50`}>
+            <div className="flex items-center gap-2 text-slate-400 mr-2">
+                <Map size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Filters:</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                <GeoSelect label="Division" options={["Dhaka", "Chattogram", "Sylhet"]} />
+                <GeoSelect label="District (Zila)" options={["Gazipur", "Feni", "Cumilla"]} />
+                <GeoSelect label="Thana" options={["Savar", "Sadar", "Gulshan"]} />
+            </div>
+          </div>
         </div>
 
         {/* TABLE (DESKTOP) */}
@@ -99,13 +123,13 @@ export default function EntriesPageUI() {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-sm text-slate-500 font-medium">
-                    <div className="flex items-center gap-1">
-                      <MapPin size={14} className="text-slate-300" />
+                    <div className="flex items-center gap-1 text-slate-600">
+                      <MapPin size={14} className="text-emerald-500" />
                       {entry.div} • {entry.dist} • {entry.thana}
                     </div>
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                    <button className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90">
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -147,7 +171,18 @@ export default function EntriesPageUI() {
   );
 }
 
-// Mobile Helper Component
+// Custom Select Component for Geography
+const GeoSelect = ({ label, options }: { label: string, options: string[] }) => (
+  <div className="relative w-full group">
+    <select className="w-full appearance-none bg-slate-50 border-none px-4 py-3 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer transition-all pr-10">
+      <option value="">All {label}</option>
+      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+    </select>
+    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-emerald-500" />
+  </div>
+);
+
+// Mobile Info Helper
 const MobileInfo = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
   <div className="flex items-center justify-between text-sm">
     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase text-[9px] tracking-wider">

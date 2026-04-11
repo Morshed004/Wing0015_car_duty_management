@@ -1,21 +1,21 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   BookOpen, 
   Table, 
   Menu, 
   X,
-  Sparkles,
   ChevronRight
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState<string>('dashboard');
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
-  // Add scroll listener for a dynamic header effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
@@ -23,15 +23,10 @@ const Navbar: React.FC = () => {
   }, []);
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'entries', label: 'Entries', icon: BookOpen },
-    { id: 'entry-table', label: 'Entry Table', icon: Table },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+    { id: 'entries', label: 'Entry Form', icon: BookOpen, href: '/' },
+    { id: 'entry-table', label: 'Entry Table', icon: Table, href: '/entry-table' },
   ];
-
-  const handleNavClick = (id: string) => {
-    setActiveItem(id);
-    setIsMobileMenuOpen(false);
-  };
 
   return (
     <nav 
@@ -45,9 +40,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-20">
           
           {/* Logo / Brand */}
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative">
-            </div>
+          <Link href="/" className="flex items-center gap-3 group cursor-pointer">
             <div className="flex flex-col">
               <span className="font-bold text-slate-800 text-base tracking-tight leading-none uppercase">
                 wing0015
@@ -56,17 +49,18 @@ const Navbar: React.FC = () => {
                 Dewanbag Sharif
               </span>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/50">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeItem === item.id;
+              const isActive = pathname === item.href;
+              
               return (
-                <button
+                <Link
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
+                  href={item.href}
                   className={`
                     relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
                     flex items-center gap-2 overflow-hidden
@@ -83,7 +77,7 @@ const Navbar: React.FC = () => {
                   
                   <Icon className={`relative z-10 w-4 h-4 transition-transform ${isActive ? 'scale-110' : ''}`} />
                   <span className="relative z-10">{item.label}</span>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -109,11 +103,13 @@ const Navbar: React.FC = () => {
         <div className="p-4 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeItem === item.id;
+            const isActive = pathname === item.href;
+
             return (
-              <button
+              <Link
                 key={item.id}
-                onClick={() => handleNavClick(item.id)}
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={`
                   w-full flex items-center justify-between px-4 py-4 rounded-2xl text-sm font-bold
                   transition-all duration-200
@@ -130,7 +126,7 @@ const Navbar: React.FC = () => {
                     <span>{item.label}</span>
                 </div>
                 <ChevronRight className={`w-4 h-4 transition-transform ${isActive ? 'translate-x-0' : '-translate-x-2 opacity-0'}`} />
-              </button>
+              </Link>
             );
           })}
         </div>
