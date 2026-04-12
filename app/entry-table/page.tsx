@@ -1,28 +1,23 @@
 "use client";
-import React, { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
 import {
-  LayoutDashboard,
   Car,
-  Trash2,
-  Search,
-  Download,
-  Filter,
-  User,
-  Phone,
-  MapPin,
   ChevronDown,
-  Eye,
-  EyeOff,
-  Map,
+  Download,
+  FileX,
+  Filter,
   LoaderCircle,
-  FileX
+  Map,
+  MapPin,
+  Phone,
+  Search,
+  User
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function EntriesPageUI() {
-  const showForm = useQuery(api.form_status.get) ?? true;
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Fetch real data
