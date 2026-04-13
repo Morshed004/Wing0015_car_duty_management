@@ -1,18 +1,17 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import { api } from '@/convex/_generated/api';
+import { useQuery } from 'convex/react';
 import {
+  ClipboardX,
   Hash,
   LoaderCircle,
   MapPin,
   Send,
   Smartphone,
   Truck,
-  User,
-  ClipboardX,
-  ArrowLeft
+  User
 } from 'lucide-react';
-import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import React, { useState } from 'react';
 
 const VehicleEntryForm = () => {
   // Mock state (in your real app, this will come from the database)
