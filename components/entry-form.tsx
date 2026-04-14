@@ -46,6 +46,27 @@ const VehicleEntryForm = () => {
     }, 2000);
   };
 
+  // Loading state while fetching from database
+  if (isFormActive === undefined) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans antialiased">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative h-20 w-20">
+            <div className="absolute inset-0 bg-emerald-100 rounded-full blur-2xl opacity-60 animate-pulse"></div>
+            <div className="relative w-full h-full bg-white rounded-full flex items-center justify-center border border-slate-100 shadow-sm">
+              <LoaderCircle className="animate-spin text-emerald-600" size={40} strokeWidth={1.5} />
+            </div>
+          </div>
+          <div className="space-y-2 text-center">
+            <p className="text-sm text-slate-400 font-medium uppercase tracking-widest">
+              Connecting to server
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // If the form is closed, full-page design
   if (!isFormActive) {
     return (
