@@ -52,37 +52,42 @@ export default function DashboardPage() {
   const allThanas = getAll('thana');
 
   const handleCopy = () => {
+  let report = `📊 গাড়ীর সারাংশ রিপোর্ট\n\n`;
+  report += `মোট গাড়ী: ${toBanglaDigit(totalFleet)}\n`;
+  report += `বাস: ${toBanglaDigit(busCount)}\n`;
+  report += `মাইক্রোবাস: ${toBanglaDigit(microbusCount)}\n\n`;
 
-    let report = `📊 গাড়ীর সারাংশ রিপোর্ট\n\n`;
-    report += `মোট গাড়ী: ${toBanglaDigit(totalFleet)}\n`;
-    report += `বাস: ${toBanglaDigit(busCount)}\n`;
-    report += `মাইক্রোবাস: ${toBanglaDigit(microbusCount)}\n\n`;
+  report += `📍 বিভাগ অনুযায়ী:\n`;
+  if (allDivisions.length > 0) {
+    allDivisions.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`);
+  } else {
+    report += `- তথ্য নেই\n`;
+  }
+  
+  report += `\n📍 জেলা অনুযায়ী:\n`;
+  if (allDistricts.length > 0) {
+    allDistricts.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`);
+  } else {
+    report += `- তথ্য নেই\n`;
+  }
 
-    report += `📍 বিভাগ অনুযায়ী:\n`;
-    allDivisions.length > 0 
-      ? allDivisions.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`)
-      : report += `- তথ্য নেই\n`;
-    
-    report += `\n📍 জেলা অনুযায়ী:\n`;
-    allDistricts.length > 0 
-      ? allDistricts.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`)
-      : report += `- তথ্য নেই\n`;
+  report += `\n📍 থানা অনুযায়ী:\n`;
+  if (allThanas.length > 0) {
+    allThanas.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`);
+  } else {
+    report += `- তথ্য নেই\n`;
+  }
 
-    report += `\n📍 থানা অনুযায়ী:\n`;
-    allThanas.length > 0 
-      ? allThanas.forEach(([label, count]) => report += `- ${label}: ${toBanglaDigit(count)}\n`)
-      : report += `- তথ্য নেই\n`;
-
-    navigator.clipboard.writeText(report).then(() => {
-      toast.success("কপি সম্পন্ন", {
-        description: "রিপোর্টটি সফলভাবে কপি করা হয়েছে।"
-      });
-    }).catch(() => {
-      toast.error("কপি ব্যর্থ", {
-        description: "রিপোর্টটি কপি করতে সমস্যা হয়েছে।"
-      });
+  navigator.clipboard.writeText(report).then(() => {
+    toast.success("কপি সম্পন্ন", {
+      description: "রিপোর্টটি সফলভাবে কপি করা হয়েছে।"
     });
-  };
+  }).catch(() => {
+    toast.error("কপি ব্যর্থ", {
+      description: "রিপোর্টটি কপি করতে সমস্যা হয়েছে।"
+    });
+  });
+};
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 pt-10 antialiased font-sans">
@@ -129,7 +134,7 @@ export default function DashboardPage() {
                 <Map size={18} />
                 <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">By Division</h3>
               </div>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-75 overflow-y-auto pr-1">
                 {allDivisions.length > 0 ? allDivisions.map(([label, count]) => (
                   <GeoItem key={label as string} label={label as string} count={count as number} color="emerald" />
                 )) : <div className="text-slate-400 text-sm">No data available</div>}
@@ -142,7 +147,7 @@ export default function DashboardPage() {
                 <MapPin size={18} />
                 <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">By District (Zila)</h3>
               </div>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-75 overflow-y-auto pr-1">
                 {allDistricts.length > 0 ? allDistricts.map(([label, count]) => (
                   <GeoItem key={label as string} label={label as string} count={count as number} color="teal" />
                 )) : <div className="text-slate-400 text-sm">No data available</div>}
@@ -155,7 +160,7 @@ export default function DashboardPage() {
                 <Building2 size={18} />
                 <h3 className="font-bold text-xs uppercase tracking-widest text-slate-400">By Thana</h3>
               </div>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-75 overflow-y-auto pr-1">
                 {allThanas.length > 0 ? allThanas.map(([label, count]) => (
                   <GeoItem key={label as string} label={label as string} count={count as number} color="slate" />
                 )) : <div className="text-slate-400 text-sm">No data available</div>}
