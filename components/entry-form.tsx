@@ -90,18 +90,17 @@ const VehicleEntryForm = () => {
   useEffect(() => {
   if (vehicleExists === undefined) return;
 
-  if (vehicleExists) {
-    setVehicleNumberError("এই গাড়ীর নাম্বারটি ইতিমধ্যে রেজিস্ট্রেশন করা আছে");
-
-    setError('vehicle_number', {
-      type: 'manual',
-      message: "এই গাড়ীর নাম্বারটি ইতিমধ্যে রেজিস্ট্রেশন করা আছে"
+  if (vehicleExists === true) {
+    setError("vehicle_number", {
+      type: "manual",
+      message: "এই গাড়ীর নাম্বারটি ইতিমধ্যে রেজিস্ট্রেশন করা আছে",
     });
-  } else {
-    setVehicleNumberError(null);
-    clearErrors('vehicle_number');
   }
-}, [vehicleExists, setError, clearErrors]);
+
+  if (vehicleExists === false) {
+    trigger("vehicle_number");
+  }
+}, [vehicleExists, setError, trigger]);
 
   const onSubmit = async (data: VehicleEntryFormData) => {
     setIsSubmitting(true);
