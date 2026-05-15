@@ -16,7 +16,9 @@ export default defineSchema({
     division: v.string(),
     district: v.string(),
     thana: v.string(),
-  }),
+  }).index("by_vehicle_number", ["vehicle_number"]),
+
+  
   show_form: defineTable({
     show_form: v.boolean(),
   }),

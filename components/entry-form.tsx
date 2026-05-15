@@ -11,7 +11,7 @@ import {
   Truck,
   User
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,8 +21,8 @@ import { toast } from 'sonner';
 const vehicleEntrySchema = z.object({
   vehicle_type: z.enum<readonly ['Bus', 'Microbus']>(['Bus', 'Microbus']),
   vehicle_number: z.string()
-    .min(5, "গাড়ীর নাম্বার কমপক্ষে ৫ অক্ষরের হতে হবে")
-    .max(20, "গাড়ীর নাম্বার সর্বোচ্চ ২০ অক্ষরের হতে পারে"),
+    .min(1, "গাড়ীর নাম্বার প্রয়োজন")
+    .min(5, "গাড়ীর নাম্বার কমপক্ষে ৫ অক্ষরের হতে হবে").trim(), // Optional: Add format validation
   representative_name: z.string()
     .min(1, "প্রতিনিধির নাম প্রয়োজন")
     .min(2, "নাম কমপক্ষে ২ অক্ষরের হতে হবে"),
@@ -42,16 +42,17 @@ const vehicleEntrySchema = z.object({
     .min(1, "থানা প্রয়োজন"),
 });
 
-// Infer the TypeScript type from the schema
 type VehicleEntryFormData = z.infer<typeof vehicleEntrySchema>;
 
 const VehicleEntryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [_isCheckingNumber, setIsCheckingNumber] = useState(false);
+  const [_vehicleNumberError, setVehicleNumberError] = useState<string | null>(null);
   
   const isFormActive = useQuery(api.form_status.get);
   const createEntry = useMutation(api.entries.create);
+  
 
-  // Initialize React Hook Form with Zod resolver
   const {
     register,
     handleSubmit,
@@ -59,7 +60,9 @@ const VehicleEntryForm = () => {
     setValue,
     watch,
     trigger,
-    reset
+    reset,
+    setError,
+    clearErrors
   } = useForm<VehicleEntryFormData>({
     resolver: zodResolver(vehicleEntrySchema),
     defaultValues: {
@@ -72,11 +75,34 @@ const VehicleEntryForm = () => {
       district: '',
       thana: '',
     },
-    mode: 'onChange', // Validate on change for better UX
+    mode: 'onChange',
   });
 
+  const vehicleNumber = watch('vehicle_number');
+  const vehicleExists = useQuery(
+  api.entries.checkVehicleNumber,
+  vehicleNumber && vehicleNumber.length >= 5
+    ? { vehicle_number: vehicleNumber }
+    : "skip"
+);
   const vehicleType = watch('vehicle_type');
   const divisions = ['ঢাকা', 'চট্টগ্রাম', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'সিলেট', 'রংপুর', 'ময়মনসিংহ'];
+
+  useEffect(() => {
+  if (vehicleExists === undefined) return;
+
+  if (vehicleExists) {
+    setVehicleNumberError("এই গাড়ীর নাম্বারটি ইতিমধ্যে রেজিস্ট্রেশন করা আছে");
+
+    setError('vehicle_number', {
+      type: 'manual',
+      message: "এই গাড়ীর নাম্বারটি ইতিমধ্যে রেজিস্ট্রেশন করা আছে"
+    });
+  } else {
+    setVehicleNumberError(null);
+    clearErrors('vehicle_number');
+  }
+}, [vehicleExists, setError, clearErrors]);
 
   const onSubmit = async (data: VehicleEntryFormData) => {
     setIsSubmitting(true);

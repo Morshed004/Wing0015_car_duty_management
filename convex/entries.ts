@@ -13,8 +13,33 @@ export const create = mutation({
     thana: v.string(),
   },
   handler: async (ctx, args) => {
+    // Check if vehicle number already exists
+    const existingVehicle = await ctx.db
+      .query("entry")
+      .withIndex("by_vehicle_number", (q) => 
+        q.eq("vehicle_number", args.vehicle_number)
+      )
+      .first();
+    
+    if (existingVehicle) {
+      throw new Error(`গাড়ীর নাম্বার "${args.vehicle_number}" ইতিমধ্যে রেজিস্ট্রেশন করা আছে`);
+    }
+    
     const entryId = await ctx.db.insert("entry", args);
     return entryId;
+  },
+});
+
+export const checkVehicleNumber = query({
+  args: { vehicle_number: v.string() },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("entry")
+      .withIndex("by_vehicle_number", (q) => 
+        q.eq("vehicle_number", args.vehicle_number)
+      )
+      .first();
+    return !!existing;
   },
 });
 
@@ -22,12 +47,5 @@ export const get = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("entry").order("desc").collect();
-  },
-});
-
-export const remove = mutation({
-  args: { id: v.id("entry") },
-  handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
   },
 });
