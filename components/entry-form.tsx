@@ -46,7 +46,6 @@ type VehicleEntryFormData = z.infer<typeof vehicleEntrySchema>;
 
 const VehicleEntryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_isCheckingNumber, setIsCheckingNumber] = useState(false);
   const [_vehicleNumberError, setVehicleNumberError] = useState<string | null>(null);
   
   const isFormActive = useQuery(api.form_status.get);

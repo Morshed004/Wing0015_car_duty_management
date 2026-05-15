@@ -13,10 +13,16 @@ import {
   Phone,
   Search,
   User,
-  X
+  X,
+  UserRound
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { Doc } from "@/convex/_generated/dataModel";
+
+
+
+type Entry = Doc<"entry">;
 
 export default function EntriesPageUI() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -34,7 +40,7 @@ export default function EntriesPageUI() {
   const displayEntries = useMemo(() => {
     if (!entries) return [];
 
-    return entries.filter((entry: any) => {
+    return entries.filter((entry: Entry) => {
       // Search matching (Vehicle #, Rep Name, or Phone)
       const matchesSearch = 
         searchQuery === "" || 
@@ -57,12 +63,12 @@ export default function EntriesPageUI() {
     }
 
     const headers = ["Vehicle Type", "Vehicle Number", "Representative Name", "Representative Mobile", "Driver Mobile", "Division", "District", "Thana", "Creation Time"];
-    const rows = displayEntries.map((entry: any) => [
+    const rows = displayEntries.map((entry: Entry) => [
       entry.vehicle_type || "",
       entry.vehicle_number || "",
       entry.representative_name || "",
       entry.representative_mobile || "",
-      entry.driver_mobile || "",
+      entry.driver_mobile || "N/A",
       entry.division || "",
       entry.district || "",
       entry.thana || "",
@@ -147,70 +153,91 @@ export default function EntriesPageUI() {
           </div>
         </div>
 
-        {/* TABLE (DESKTOP) */}
+        {/* TABLE (DESKTOP) - Updated with Driver column */}
         <div className="hidden md:block bg-white rounded-4xl overflow-hidden shadow-sm border border-slate-100">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Representative</th>
-                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Location Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-12 text-center text-slate-400">
-                    <LoaderCircle className="animate-spin mx-auto mb-2 text-emerald-500" size={28} />
-                    <p className="font-medium text-sm">Loading vehicle entries...</p>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-200">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Representative</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Driver</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Location Details</th>
                 </tr>
-              ) : displayEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400 shadow-inner">
-                        <FileX size={32} />
-                      </div>
-                      <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight">No Entries Found</h3>
-                      <p className="text-slate-500 text-sm font-medium">No results match your search criteria.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                displayEntries.map((entry: any) => (
-                  <tr key={entry._id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 rounded-lg text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
-                          <Car size={18} />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-800">{entry.vehicle_number}</span>
-                          <span className="text-xs text-slate-400 font-medium">{entry.vehicle_type}</span>
-                        </div>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                      <LoaderCircle className="animate-spin mx-auto mb-2 text-emerald-500" size={28} />
+                      <p className="font-medium text-sm">Loading vehicle entries...</p>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-700">{entry.representative_name}</span>
-                        <span className="text-xs text-emerald-600 font-bold">{entry.representative_mobile}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-sm text-slate-500 font-medium">
-                      <div className="flex items-center gap-1 text-slate-600">
-                        <MapPin size={14} className="text-emerald-500" />
-                        {entry.division} • {entry.district} • {entry.thana}
+                  </tr>
+                ) : displayEntries.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400 shadow-inner">
+                          <FileX size={32} />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-800 mb-1 tracking-tight">No Entries Found</h3>
+                        <p className="text-slate-500 text-sm font-medium">No results match your search criteria.</p>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  displayEntries.map((entry: Entry) => (
+                    <tr key={entry._id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-slate-100 rounded-lg text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                            <Car size={18} />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800">{entry.vehicle_number}</span>
+                            <span className="text-xs text-slate-400 font-medium">{entry.vehicle_type}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-700">{entry.representative_name}</span>
+                          <span className="text-xs text-emerald-600 font-bold">{entry.representative_mobile}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex flex-col">
+                          {entry.driver_mobile ? (
+                            <>
+                              <div className="flex items-center gap-1">
+                                <UserRound size={12} className="text-slate-400" />
+                                <span className="text-xs text-slate-500 font-medium">Driver</span>
+                              </div>
+                              <span className="font-bold text-slate-700">{entry.driver_mobile}</span>
+                            </>
+                          ) : (
+                            <div className="flex flex-col">
+                              <span className="text-xs text-amber-600 font-medium">No Driver Info</span>
+                              <span className="text-xs text-slate-400">─</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-sm text-slate-500 font-medium">
+                        <div className="flex items-center gap-1 text-slate-600">
+                          <MapPin size={14} className="text-emerald-500" />
+                          {entry.division} • {entry.district} • {entry.thana}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* CARDS (MOBILE) */}
+        {/* CARDS (MOBILE) - Updated with Driver info */}
         <div className="md:hidden space-y-4">
           {isLoading ? (
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 text-center">
@@ -226,7 +253,7 @@ export default function EntriesPageUI() {
               <p className="text-slate-500 text-sm font-medium">No results match your search criteria.</p>
             </div>
           ) : (
-            displayEntries.map((entry: any) => (
+            displayEntries.map((entry: Entry) => (
               <div key={entry._id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
@@ -241,9 +268,23 @@ export default function EntriesPageUI() {
                 </div>
 
                 <div className="space-y-3 bg-slate-50 p-4 rounded-2xl">
-                  <MobileInfo icon={<User size={14} />} label="Rep" value={entry.representative_name} />
+                  <MobileInfo icon={<User size={14} />} label="Representative" value={entry.representative_name} />
                   <MobileInfo icon={<Phone size={14} />} label="Phone" value={entry.representative_mobile} />
-                  <MobileInfo icon={<MapPin size={14} />} label="Loc" value={`${entry.district}, ${entry.thana}`} />
+                  
+                  {/* Driver Mobile Section */}
+                  {entry.driver_mobile ? (
+                    <MobileInfo icon={<UserRound size={14} />} label="Driver" value={entry.driver_mobile} />
+                  ) : (
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 text-slate-400 font-bold uppercase text-[9px] tracking-wider">
+                        <UserRound size={14} /> DRIVER
+                      </div>
+                      <span className="text-xs text-amber-600 font-medium italic">Not provided</span>
+                    </div>
+                  )}
+                  
+                  <MobileInfo icon={<MapPin size={14} />} label="Location" value={`${entry.district}, ${entry.thana}`} />
+                  <MobileInfo icon={<Map size={14} />} label="Division" value={entry.division} />
                 </div>
               </div>
             ))
@@ -269,7 +310,7 @@ const GeoSelect = ({ label, options, value, onChange }: { label: string, options
   </div>
 );
 
-const MobileInfo = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
+const MobileInfo = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
   <div className="flex items-center justify-between text-sm">
     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase text-[9px] tracking-wider">
       {icon} {label}
