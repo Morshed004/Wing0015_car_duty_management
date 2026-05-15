@@ -46,8 +46,6 @@ type VehicleEntryFormData = z.infer<typeof vehicleEntrySchema>;
 
 const VehicleEntryForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_vehicleNumberError, setVehicleNumberError] = useState<string | null>(null);
-  
   const isFormActive = useQuery(api.form_status.get);
   const createEntry = useMutation(api.entries.create);
   
@@ -61,7 +59,6 @@ const VehicleEntryForm = () => {
     trigger,
     reset,
     setError,
-    clearErrors
   } = useForm<VehicleEntryFormData>({
     resolver: zodResolver(vehicleEntrySchema),
     defaultValues: {
