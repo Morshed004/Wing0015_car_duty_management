@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/navbar";
 import { Toaster } from "sonner";
 import { ConvexClientProvider } from "@/lib/ConvexClientProvider";
 
@@ -34,11 +33,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="grow pt-20">
           <ConvexClientProvider>{children}</ConvexClientProvider>
           <Toaster richColors position="top-right" />
-        </main>
       </body>
     </html>
   );
