@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as entries from "../entries.js";
 import type * as form_status from "../form_status.js";
 import type * as http from "../http.js";
+import type * as parkingPosition from "../parkingPosition.js";
 
 import type {
   ApiFromModules,
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   entries: typeof entries;
   form_status: typeof form_status;
   http: typeof http;
+  parkingPosition: typeof parkingPosition;
 }>;
 
 /**

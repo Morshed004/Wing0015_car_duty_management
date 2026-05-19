@@ -4,10 +4,7 @@ import { v } from "convex/values";
 export default defineSchema({
   entry: defineTable({
     // Convex enums are defined as an array of strings
-    vehicle_type: v.union(
-      v.literal('Bus'), 
-      v.literal('Microbus')
-    ),
+    vehicle_type: v.union(v.literal("Bus"), v.literal("Microbus")),
     vehicle_number: v.string(),
     representative_name: v.string(),
     representative_mobile: v.string(),
@@ -18,7 +15,10 @@ export default defineSchema({
     thana: v.string(),
   }).index("by_vehicle_number", ["vehicle_number"]),
 
-  
+  parking_position: defineTable({
+    position: v.string(),
+  }),
+
   show_form: defineTable({
     show_form: v.boolean(),
   }),

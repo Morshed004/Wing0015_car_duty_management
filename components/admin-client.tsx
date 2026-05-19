@@ -1,80 +1,25 @@
 "use client";
 
 import { api } from "@/convex/_generated/api";
+import { Doc } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import {
-  CheckCircle,
-  Plus,
-  Power,
-  PowerOff,
-  Settings,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, Power, PowerOff, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-
-interface DynamicField {
-  id: string;
-  value: string;
-}
 
 export default function AdminClient() {
   const isFormActive = useQuery(api.form_status.get);
   const formStatusUpdate = useMutation(api.form_status.toggle);
 
+  const savedPositions = useQuery(
+    api.parkingPosition.getPositions,
+  ) as Doc<"parking_position">[];
   // Dynamic array inputs
-  const [vehicleCategories, setVehicleCategories] = useState<DynamicField[]>([
-    { id: "1", value: "" },
-  ]);
+  const [vehiclePosition, setVehiclePosition] = useState("");
+
+  const savePositions = useMutation(api.parkingPosition.addPositions);
 
   const formStatus = isFormActive ?? false;
-
-  // Add new field
-  const addField = (type: "categories" | "divisions" | "emails") => {
-    const newField = { id: Date.now().toString(), value: "" };
-
-    switch (type) {
-      case "categories":
-        setVehicleCategories([...vehicleCategories, newField]);
-        break;
-    }
-  };
-
-  // Remove field
-  const removeField = (
-    type: "categories" | "divisions" | "emails",
-    id: string,
-  ) => {
-    switch (type) {
-      case "categories":
-        if (vehicleCategories.length > 1) {
-          setVehicleCategories(
-            vehicleCategories.filter((field) => field.id !== id),
-          );
-        } else {
-          toast.error("কমপক্ষে একটি ক্যাটাগরি থাকতে হবে");
-        }
-        break;
-    }
-  };
-
-  // Update field value
-  const updateField = (
-    type: "categories" | "divisions" | "emails",
-    id: string,
-    value: string,
-  ) => {
-    switch (type) {
-      case "categories":
-        setVehicleCategories(
-          vehicleCategories.map((field) =>
-            field.id === id ? { ...field, value } : field,
-          ),
-        );
-        break;
-    }
-  };
 
   // Toggle form status
   const handleToggleStatus = async () => {
@@ -92,21 +37,29 @@ export default function AdminClient() {
   };
 
   // Save all settings
-  const handleSaveSettings = async () => {
-    const settings = {
-      vehicleCategories: vehicleCategories.map((c) => c.value).filter((v) => v),
-    };
-
-    console.log("Saving settings:", settings);
+  const handleSavePosition = async () => {
+    if (!vehiclePosition.trim()) {
+      toast.error("দয়া করে একটি পার্কিং স্থান লিখুন");
+      return;
+    }
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("সব সেটিংস সফলভাবে সংরক্ষণ করা হয়েছে");
+      await savePositions({
+        positions: vehiclePosition,
+      });
+      setVehiclePosition("");
+
+      toast.success("পার্কিং স্থান সফলভাবে সংরক্ষণ করা হয়েছে");
     } catch {
-      toast.error("সেটিংস সংরক্ষণ করতে ব্যর্থ হয়েছে");
+      toast.error("পার্কিং স্থান সংরক্ষণ করতে ব্যর্থ হয়েছে");
     }
   };
+
+  const handleDelete = ()=>{
+    window.confirm("Do you want to delete?")
+
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased">
       {/* Header */}
@@ -194,15 +147,6 @@ export default function AdminClient() {
 
         {/* Settings Form */}
         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
-          <div className="bg-linear-to-br from-emerald-600 to-teal-700 p-6 text-white">
-            <div className="flex items-center gap-3">
-              <Settings className="text-white" size={24} />
-              <div>
-                <h2 className="text-xl font-bold">ফ্রম সেটিংস</h2>
-              </div>
-            </div>
-          </div>
-
           <div className="p-6 md:p-8 space-y-8">
             {/* Vehicle Categories */}
             <div>
@@ -215,47 +159,83 @@ export default function AdminClient() {
                     এন্ট্রি ফরমে প্রদর্শিত গাড়ীর পার্কিং এর স্থান
                   </p>
                 </div>
-                <button
-                  onClick={() => addField("categories")}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-all text-sm"
-                >
-                  <Plus size={16} />
-                  নতুন যোগ করুন
-                </button>
               </div>
               <div className="space-y-3">
-                {vehicleCategories.map((category) => (
-                  <div key={category.id} className="flex gap-3">
-                    <input
-                      type="text"
-                      value={category.value}
-                      onChange={(e) =>
-                        updateField("categories", category.id, e.target.value)
-                      }
-                      className="flex-1 px-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
-                      placeholder="যেমন: শাপলা চত্বর, দিলকুশা"
-                    />
-                    <button
-                      onClick={() => removeField("categories", category.id)}
-                      className="px-3 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={vehiclePosition}
+                    onChange={(e) => setVehiclePosition(e.target.value)}
+                    className="flex-1 px-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="যেমন: শাপলা চত্বর, দিলকুশা"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Save Button */}
-            <div className="pt-6 border-t border-slate-100">
+            <div>
               <button
-                onClick={handleSaveSettings}
+                onClick={handleSavePosition}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                <Settings size={20} />
-                সেটিংস সংরক্ষণ করুন
+                পার্কিং এর স্থান যোগ করুন
               </button>
             </div>
+
+            {/* Display Positions Section */}
+            {savedPositions && savedPositions.length > 0 && (
+              <div className="pt-6 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800">
+                      সংরক্ষিত পার্কিং স্থানসমূহ
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      মোট {savedPositions.length} টি স্থান সংরক্ষিত আছে
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-3">
+                  {savedPositions.map((position) => (
+                    <div
+                      key={position._id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition-all"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full shrink-0" />
+                        <span className="text-slate-700 font-medium truncate">
+                          {position.position}
+                        </span>
+                      </div>
+
+                      <button
+                        className="self-end sm:self-center p-2 flex items-center justify-center gap-2 bg-red-600 text-white hover:bg-red-500 active:bg-red-800 rounded-lg transition-all"
+                        aria-label={`Delete position ${position.position}`}
+                        onClick={handleDelete}
+                      >
+                        <Trash2 size={18} />
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {savedPositions && savedPositions.length === 0 && (
+              <div className="pt-6 border-t border-slate-100">
+                <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-200">
+                  <p className="text-slate-500">
+                    কোনো পার্কিং স্থান সংরক্ষিত নেই
+                  </p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    উপরে একটি স্থান যোগ করুন
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
