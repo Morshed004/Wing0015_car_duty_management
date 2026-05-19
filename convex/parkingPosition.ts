@@ -7,19 +7,6 @@ export const addPositions = mutation({
   },
 
   handler: async (ctx, args) => {
-    // existing document
-    const existing = await ctx.db
-      .query("parking_position")
-      .first();
-
-    // update
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        position: args.positions,
-      });
-
-      return;
-    }
 
     await ctx.db.insert("parking_position", {
       position: args.positions,
@@ -34,3 +21,13 @@ export const getPositions = query({
       .collect();
   },
 });
+
+export const deletePosition = mutation({
+  args: {
+    id: v.id("parking_position"),
+  },
+
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+})

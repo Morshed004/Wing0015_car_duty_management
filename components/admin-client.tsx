@@ -1,15 +1,24 @@
 "use client";
 
 import { api } from "@/convex/_generated/api";
-import { Doc } from "@/convex/_generated/dataModel";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { CheckCircle, Power, PowerOff, Trash2, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+
+type Entry = Doc<"entry">;
 
 export default function AdminClient() {
   const isFormActive = useQuery(api.form_status.get);
   const formStatusUpdate = useMutation(api.form_status.toggle);
+  // --- NEW STATE FOR FILTERS ---
+  const [searchQuery] = useState("");
+  const [selectedDivision] = useState("");
+  const [selectedDistrict] = useState("");
+  const [selectedThana] = useState("");
+
+  const entries = useQuery(api.entries.get);
 
   const savedPositions = useQuery(
     api.parkingPosition.getPositions,
@@ -18,8 +27,93 @@ export default function AdminClient() {
   const [vehiclePosition, setVehiclePosition] = useState("");
 
   const savePositions = useMutation(api.parkingPosition.addPositions);
+  const deletePosition = useMutation(api.parkingPosition.deletePosition);
 
   const formStatus = isFormActive ?? false;
+
+  // --- CLIENT-SIDE FILTERING LOGIC ---
+  const displayEntries = useMemo(() => {
+    if (!entries) return [];
+
+    return entries.filter((entry: Entry) => {
+      // Search matching (Vehicle #, Rep Name, or Phone)
+      const matchesSearch =
+        searchQuery === "" ||
+        [
+          entry.vehicle_number,
+          entry.representative_name,
+          entry.representative_mobile,
+          entry.driver_mobile,
+        ].some((field) =>
+          field?.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
+
+      // Geography matching
+      const matchesDivision =
+        !selectedDivision || entry.division === selectedDivision;
+      const matchesDistrict =
+        !selectedDistrict || entry.district === selectedDistrict;
+      const matchesThana = !selectedThana || entry.thana === selectedThana;
+
+      return (
+        matchesSearch && matchesDivision && matchesDistrict && matchesThana
+      );
+    });
+  }, [entries, searchQuery, selectedDivision, selectedDistrict, selectedThana]);
+
+  // Export CSV
+  const exportToCSV = () => {
+    if (!displayEntries || displayEntries.length === 0) {
+      toast.error("No data to export", {
+        description: "There are no entries matching your filters.",
+      });
+      return;
+    }
+
+    const headers = [
+      "Vehicle Type",
+      "Vehicle Number",
+      "Representative Name",
+      "Representative Mobile",
+      "Driver Mobile",
+      "Division",
+      "District",
+      "Thana",
+      "Creation Time",
+    ];
+    const rows = displayEntries.map((entry: Entry) => [
+      entry.vehicle_type || "",
+      entry.vehicle_number || "",
+      entry.representative_name || "",
+      entry.representative_mobile || "",
+      entry.driver_mobile || "N/A",
+      entry.division || "",
+      entry.district || "",
+      entry.thana || "",
+      entry._creationTime ? new Date(entry._creationTime).toLocaleString() : "",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `report-${new Date().toLocaleDateString()}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Export Successful");
+  };
 
   // Toggle form status
   const handleToggleStatus = async () => {
@@ -45,7 +139,7 @@ export default function AdminClient() {
 
     try {
       await savePositions({
-        positions: vehiclePosition,
+        positions: vehiclePosition.trim(),
       });
       setVehiclePosition("");
 
@@ -55,10 +149,13 @@ export default function AdminClient() {
     }
   };
 
-  const handleDelete = ()=>{
-    window.confirm("Do you want to delete?")
+  const handleDelete = async (id: Id<"parking_position">) => {
+    const confirmDelete = window.confirm("Do you want to delete?");
 
-  }
+    if (!confirmDelete) return;
+
+    await deletePosition({ id });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased">
@@ -75,7 +172,9 @@ export default function AdminClient() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-all disabled:opacity-50">
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition-all disabled:opacity-50"
+              onClick={exportToCSV}
+              >
                 এক্সপোর্ট
               </button>
               <button
@@ -212,7 +311,9 @@ export default function AdminClient() {
                       <button
                         className="self-end sm:self-center p-2 flex items-center justify-center gap-2 bg-red-600 text-white hover:bg-red-500 active:bg-red-800 rounded-lg transition-all"
                         aria-label={`Delete position ${position.position}`}
-                        onClick={handleDelete}
+                        onClick={() => {
+                          handleDelete(position._id);
+                        }}
                       >
                         <Trash2 size={18} />
                         Delete

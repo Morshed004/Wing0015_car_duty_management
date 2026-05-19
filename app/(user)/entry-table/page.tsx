@@ -1,10 +1,10 @@
 "use client";
 import { api } from "@/convex/_generated/api";
+import { Doc } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import {
   Car,
   ChevronDown,
-  Download,
   FileX,
   Filter,
   LoaderCircle,
@@ -13,12 +13,10 @@ import {
   Phone,
   Search,
   User,
-  X,
-  UserRound
+  UserRound,
+  X
 } from "lucide-react";
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
-import { Doc } from "@/convex/_generated/dataModel";
+import { useMemo, useState } from "react";
 
 
 
@@ -56,37 +54,6 @@ export default function EntriesPageUI() {
     });
   }, [entries, searchQuery, selectedDivision, selectedDistrict, selectedThana]);
 
-  const exportToCSV = () => {
-    if (!displayEntries || displayEntries.length === 0) {
-      toast.error("No data to export", { description: "There are no entries matching your filters." });
-      return;
-    }
-
-    const headers = ["Vehicle Type", "Vehicle Number", "Representative Name", "Representative Mobile", "Driver Mobile", "Division", "District", "Thana", "Creation Time"];
-    const rows = displayEntries.map((entry: Entry) => [
-      entry.vehicle_type || "",
-      entry.vehicle_number || "",
-      entry.representative_name || "",
-      entry.representative_mobile || "",
-      entry.driver_mobile || "N/A",
-      entry.division || "",
-      entry.district || "",
-      entry.thana || "",
-      entry._creationTime ? new Date(entry._creationTime).toLocaleString() : ""
-    ]);
-
-    const csvContent = [headers.join(","), ...rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `report-${new Date().toLocaleDateString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Export Successful");
-  };
-
   // Generate unique options from the FULL dataset (entries), not the filtered one
   const uniqueDivisions = Array.from(new Set((entries || []).map((e: any) => e.division).filter(Boolean))).sort() as string[];
   const uniqueDistricts = Array.from(new Set((entries || []).map((e: any) => e.district).filter(Boolean))).sort() as string[];
@@ -117,13 +84,6 @@ export default function EntriesPageUI() {
               />
             </div>
             <div className="flex gap-2">
-              <button 
-                onClick={exportToCSV}
-                className="grow flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-4 rounded-2xl font-bold text-sm hover:bg-emerald-100 transition-all"
-              >
-                <Download size={18} />
-                Export
-              </button>
               <button
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
                 className="lg:hidden p-4 bg-slate-100 text-slate-600 rounded-2xl"
