@@ -13,6 +13,7 @@ export default defineSchema({
     division: v.string(),
     district: v.string(),
     thana: v.string(),
+    position: v.string()
   }).index("by_vehicle_number", ["vehicle_number"]),
 
   parking_position: defineTable({

@@ -21,28 +21,28 @@ import { toast } from "sonner";
 const vehicleEntrySchema = z.object({
   vehicle_type: z.enum<readonly ["Bus", "Microbus"]>(["Bus", "Microbus"]),
   vehicle_number: z
-    .string()
+    .string().trim()
     .min(1, "গাড়ীর নাম্বার প্রয়োজন")
     .min(5, "গাড়ীর নাম্বার কমপক্ষে ৫ অক্ষরের হতে হবে")
     .trim(), // Optional: Add format validation
   representative_name: z
-    .string()
+    .string().trim()
     .min(1, "প্রতিনিধির নাম প্রয়োজন")
     .min(2, "নাম কমপক্ষে ২ অক্ষরের হতে হবে"),
   representative_mobile: z
-    .string()
+    .string().trim()
     .min(1, "মোবাইল নাম্বার প্রয়োজন")
     .regex(/^01[3-9]\d{8}$/, "সঠিক মোবাইল নাম্বার দিন (উদা: 017XXXXXXXX)"),
   driver_mobile: z
-    .string()
+    .string().trim()
     .optional()
     .refine((val) => !val || /^01[3-9]\d{8}$/.test(val), {
       message: "সঠিক ড্রাইভারের মোবাইল নাম্বার দিন (উদা: 017XXXXXXXX)",
     }),
-  division: z.string().min(1, "বিভাগ নির্বাচন করুন"),
-  district: z.string().min(1, "জেলা প্রয়োজন"),
-  thana: z.string().min(1, "থানা প্রয়োজন"),
-  position: z.string().min(1, "পার্কিং এর স্থান নির্বাচন করুন"),
+  division: z.string().trim().min(1, "বিভাগ নির্বাচন করুন"),
+  district: z.string().trim().min(1, "জেলা প্রয়োজন"),
+  thana: z.string().trim().min(1, "থানা প্রয়োজন"),
+  position: z.string().trim().min(1, "পার্কিং এর স্থান নির্বাচন করুন"),
 });
 
 type VehicleEntryFormData = z.infer<typeof vehicleEntrySchema>;
