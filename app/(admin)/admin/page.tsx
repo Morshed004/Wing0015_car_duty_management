@@ -6,7 +6,7 @@ export default async function AdminPage() {
   const auth = await isAuthenticated();
 
   if (!auth) {
-    redirect("/loging");
+    redirect("/login");
   }
 
   return <AdminClient />;
