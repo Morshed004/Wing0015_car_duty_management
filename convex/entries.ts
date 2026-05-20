@@ -11,6 +11,7 @@ export const create = mutation({
     division: v.string(),
     district: v.string(),
     thana: v.string(),
+    position: v.string()
   },
   handler: async (ctx, args) => {
     // Check if vehicle number already exists
