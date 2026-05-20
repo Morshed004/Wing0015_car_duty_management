@@ -1,13 +1,11 @@
-import { redirect } from "next/navigation";
-import { fetchAuthQuery } from "@/lib/auth-server";
-import { api } from "@/convex/_generated/api";
 import AdminClient from "@/components/admin-client";
+import { isAuthenticated } from "@/lib/auth-server";
+import { redirect } from "next/navigation";
 
 export default async function AdminPage() {
-  const user = await fetchAuthQuery(api.auth.getCurrentUser);
+  const auth = await isAuthenticated();
 
-
-  if (!user) {
+  if (!auth) {
     redirect("/loging");
   }
 
