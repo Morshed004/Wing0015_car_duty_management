@@ -53,7 +53,6 @@ const VehicleEntryForm = () => {
   const createEntry = useMutation(api.entries.create);
   const positionData = useQuery(api.parkingPosition.getPositions);
 
-  console.log(positionData);
   const {
     register,
     handleSubmit,
