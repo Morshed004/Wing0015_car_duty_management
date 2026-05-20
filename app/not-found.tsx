@@ -4,10 +4,7 @@ import {
     Bus,
     Car,
     Compass,
-    HelpCircle,
-    Home,
-    LayoutDashboard,
-    MapPin
+    LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
 
@@ -51,8 +48,8 @@ export default function NotFound() {
             </h1>
             
             <p className="text-slate-500 font-medium max-w-md mx-auto">
-              Oops! The vehicle you're looking for seems to have taken a wrong turn. 
-              This route doesn't exist in our navigation system.
+              Oops! The vehicle you&apos;re looking for seems to have taken a wrong turn. 
+              This route doesn&apos;t exist in our navigation system.
             </p>
           </div>
         </div>
